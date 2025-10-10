@@ -1,0 +1,41 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type Tokens {
+  accessToken: String!
+}
+
+type AuthPayload {
+  id: String!
+  username: String!
+  tokens: Tokens!
+}
+
+type GqlUser {
+  id: ID!
+  username: String!
+}
+
+type Query {
+  me: GqlUser
+  users: [GqlUser!]!
+  user(id: ID!): GqlUser
+}
+
+type Mutation {
+  register(input: RegisterInput!): AuthPayload!
+  login(input: LoginInput!): AuthPayload!
+  refreshTokens: Tokens!
+  logout: Boolean!
+}
+
+input RegisterInput {
+  username: String!
+  password: String!
+}
+
+input LoginInput {
+  username: String!
+  password: String!
+}
