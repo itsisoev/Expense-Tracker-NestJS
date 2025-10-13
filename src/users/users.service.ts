@@ -3,7 +3,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UsersEntity } from './entity/users.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcryptjs';
-import { User } from '../graphql/types/user.type';
 
 @Injectable()
 export class UsersService {

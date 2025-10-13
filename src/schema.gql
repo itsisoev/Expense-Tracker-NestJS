@@ -4,6 +4,7 @@
 
 type Tokens {
   accessToken: String!
+  refreshToken: String!
 }
 
 type AuthPayload {
@@ -26,7 +27,7 @@ type Query {
 type Mutation {
   register(input: RegisterInput!): AuthPayload!
   login(input: LoginInput!): AuthPayload!
-  refreshTokens: Tokens!
+  refreshTokens(refreshToken: String!): Tokens!
   logout: Boolean!
 }
 

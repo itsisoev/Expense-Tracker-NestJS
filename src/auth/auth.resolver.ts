@@ -6,6 +6,21 @@ import { LoginInput, RegisterInput } from './dto/auth.inputs';
 import { GqlUser } from '../graphql/models/user.model';
 import { ConfigService } from '@nestjs/config';
 
+interface JwtBasePayload {
+  sub: string;
+  username: string;
+  iat?: number;
+  exp?: number;
+}
+
+interface JwtAccessPayload extends JwtBasePayload {
+  type?: 'access';
+}
+
+interface JwtRefreshPayload extends JwtBasePayload {
+  type?: 'refresh';
+}
+
 @Resolver()
 export class AuthResolver {
   constructor(
@@ -15,59 +30,49 @@ export class AuthResolver {
   ) {}
 
   @Mutation(() => AuthPayload)
-  async register(
-    @Args('input') input: RegisterInput,
-    @Context() ctx: any,
-  ): Promise<AuthPayload> {
+  async register(@Args('input') input: RegisterInput): Promise<AuthPayload> {
     const { user, tokens } = await this.auth.register(
       input.username,
       input.password,
     );
-    this.setRefreshCookie(ctx.res, tokens.refreshToken);
     return {
       id: user.id,
       username: user.username,
-      tokens: { accessToken: tokens.accessToken },
+      tokens,
     };
   }
 
   @Mutation(() => AuthPayload)
-  async login(
-    @Args('input') input: LoginInput,
-    @Context() ctx: any,
-  ): Promise<AuthPayload> {
+  async login(@Args('input') input: LoginInput): Promise<AuthPayload> {
     const { user, tokens } = await this.auth.login(
       input.username,
       input.password,
     );
-    this.setRefreshCookie(ctx.res, tokens.refreshToken);
     return {
       id: user.id,
       username: user.username,
-      tokens: { accessToken: tokens.accessToken },
+      tokens,
     };
   }
 
   @Mutation(() => Tokens)
-  async refreshTokens(@Context() ctx: any): Promise<Tokens> {
-    const token = ctx.req.cookies?.['refresh_token'];
-    if (!token) throw new Error('No refresh token');
+  async refreshTokens(
+    @Args('refreshToken') refreshToken: string,
+  ): Promise<Tokens> {
     let payload: any;
     try {
-      payload = await this.jwt.verifyAsync(token, {
+      payload = await this.jwt.verifyAsync(refreshToken, {
         secret: this.cfg.get<string>('JWT_REFRESH_SECRET')!,
       });
     } catch {
       throw new Error('Invalid refresh token');
     }
     const tokens = await this.auth.refresh(payload.sub, payload.username);
-    this.setRefreshCookie(ctx.res, tokens.refreshToken);
-    return { accessToken: tokens.accessToken };
+    return tokens;
   }
 
   @Mutation(() => Boolean)
-  async logout(@Context() ctx: any): Promise<boolean> {
-    ctx.res.clearCookie('refresh_token', this.cookieOptions());
+  async logout(): Promise<boolean> {
     return true;
   }
 
@@ -84,37 +89,5 @@ export class AuthResolver {
     } catch {
       return null;
     }
-  }
-
-  private setRefreshCookie(res: any, token: string) {
-    res.cookie('refresh_token', token, this.cookieOptions());
-  }
-
-  private cookieOptions() {
-    const isProd = this.cfg.get('NODE_ENV') === 'production';
-    return {
-      httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? 'strict' : 'lax',
-      path: '/',
-      maxAge: this.parseDurationMs(this.cfg.get('JWT_REFRESH_TTL', '7d')),
-      domain: this.cfg.get('COOKIE_DOMAIN') || undefined,
-    };
-  }
-
-  private parseDurationMs(s: string) {
-    const m = s.match(/^(\d+)([smhd])$/i);
-    if (!m) return 7 * 24 * 3600 * 1000;
-    const n = Number(m[1]);
-    const unit = m[2].toLowerCase();
-    const mult =
-      unit === 's'
-        ? 1000
-        : unit === 'm'
-          ? 60000
-          : unit === 'h'
-            ? 3600000
-            : 86400000;
-    return n * mult;
   }
 }
