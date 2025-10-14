@@ -1,23 +1,31 @@
-import { Field, ID, ObjectType, InputType } from '@nestjs/graphql';
+import { Field, ID, InputType, ObjectType } from '@nestjs/graphql';
 
 @ObjectType()
 export class GqlCategory {
-  @Field(() => ID) id!: string;
-  @Field() name!: string;
-  @Field({ nullable: true }) color?: string | null;
-  @Field() createdAt!: Date;
-  @Field() updatedAt!: Date;
+  @Field(() => ID)
+  id!: string;
+
+  @Field(() => String)
+  name!: string;
+
+  @Field(() => String, { nullable: true })
+  imagePath!: string | null;
+
+  @Field(() => Boolean)
+  isDefault!: boolean;
 }
 
 @InputType()
 export class CreateCategoryInput {
-  @Field() name!: string;
-  @Field({ nullable: true }) color?: string;
+  @Field(() => String)
+  name!: string;
 }
 
 @InputType()
 export class UpdateCategoryInput {
-  @Field(() => ID) id!: string;
-  @Field({ nullable: true }) name?: string;
-  @Field({ nullable: true }) color?: string;
+  @Field(() => ID)
+  id!: string;
+
+  @Field(() => String, { nullable: true })
+  name?: string;
 }

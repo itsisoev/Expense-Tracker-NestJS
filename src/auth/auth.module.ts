@@ -6,6 +6,7 @@ import { AuthResolver } from './auth.resolver';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersEntity } from '../users/entity/users.entity';
 import { UsersModule } from '../users/users.module';
+import { CategoriesModule } from '../categories/categories.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UsersModule } from '../users/users.module';
     }),
 
     UsersModule,
+    CategoriesModule,
   ],
   providers: [AuthService, AuthResolver, ConfigService],
   exports: [AuthService],

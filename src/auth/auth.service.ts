@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { UsersService } from '../users/users.service';
+import { CategoriesService } from '../categories/categories.service';
 
 type JwtPayload = { sub: string; username: string };
 
@@ -11,11 +12,13 @@ export class AuthService {
     private readonly users: UsersService,
     private readonly jwt: JwtService,
     private readonly cfg: ConfigService,
+    private readonly categories: CategoriesService,
   ) {}
 
   async register(username: string, password: string) {
     const user = await this.users.create(username, password);
     const tokens = await this.issueTokens(user.id, user.username);
+    await this.categories.ensureDefaultCategories(user.id);
     return { user, tokens };
   }
 

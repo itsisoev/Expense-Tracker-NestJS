@@ -18,10 +18,18 @@ type GqlUser {
   username: String!
 }
 
+type GqlCategory {
+  id: ID!
+  name: String!
+  imagePath: String
+  isDefault: Boolean!
+}
+
 type Query {
   me: GqlUser
   users: [GqlUser!]!
   user(id: ID!): GqlUser
+  myCategories: [GqlCategory!]!
 }
 
 type Mutation {
@@ -29,6 +37,9 @@ type Mutation {
   login(input: LoginInput!): AuthPayload!
   refreshTokens(refreshToken: String!): Tokens!
   logout: Boolean!
+  createCategory(input: CreateCategoryInput!): GqlCategory!
+  updateCategory(input: UpdateCategoryInput!): GqlCategory!
+  deleteCategory(id: ID!): Boolean!
 }
 
 input RegisterInput {
@@ -39,4 +50,13 @@ input RegisterInput {
 input LoginInput {
   username: String!
   password: String!
+}
+
+input CreateCategoryInput {
+  name: String!
+}
+
+input UpdateCategoryInput {
+  id: ID!
+  name: String
 }

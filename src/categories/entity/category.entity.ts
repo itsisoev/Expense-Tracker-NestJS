@@ -1,14 +1,14 @@
-import { UsersEntity } from 'src/users/entity/users.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
   Index,
-  JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
+  JoinColumn,
 } from 'typeorm';
+import { UsersEntity } from '../../users/entity/users.entity';
 
 @Entity('categories')
 @Index(['userId', 'name'], { unique: true })
@@ -26,8 +26,11 @@ export class CategoryEntity {
   @Column({ type: 'varchar', length: 64 })
   name!: string;
 
-  @Column({ type: 'varchar', length: 16, nullable: true })
-  color?: string | null;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  imagePath: string | null = null;
+
+  @Column({ type: 'boolean', default: false })
+  isDefault!: boolean;
 
   @CreateDateColumn()
   createdAt!: Date;
