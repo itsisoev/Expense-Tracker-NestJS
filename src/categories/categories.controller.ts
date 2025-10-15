@@ -6,16 +6,25 @@ import {
   UploadedFile,
   UseInterceptors,
   Req,
+  BadRequestException,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { randomUUID } from 'crypto';
 import { extname, join } from 'path';
+import * as fs from 'fs/promises';
+import { existsSync } from 'fs';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { CategoriesService } from './categories.service';
 
 const UPLOAD_DIR = join(process.cwd(), 'uploads', 'categories');
+
+async function ensureUploadDir() {
+  if (!existsSync(UPLOAD_DIR)) {
+    await fs.mkdir(UPLOAD_DIR, { recursive: true });
+  }
+}
 
 function filenameBuilder(
   _: any,
@@ -24,6 +33,17 @@ function filenameBuilder(
 ) {
   const id = randomUUID();
   cb(null, `${id}${extname(file.originalname)}`);
+}
+
+function imageFileFilter(
+  _: any,
+  file: Express.Multer.File,
+  cb: (err: Error | null, accept: boolean) => void,
+) {
+  if (!file.mimetype.startsWith('image/')) {
+    return cb(new BadRequestException('Only image files are allowed'), false);
+  }
+  cb(null, true);
 }
 
 @Controller('categories')
@@ -48,9 +68,17 @@ export class CategoriesController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: UPLOAD_DIR,
+        destination: async (_req, _file, cb) => {
+          try {
+            await ensureUploadDir();
+            cb(null, UPLOAD_DIR);
+          } catch (e) {
+            cb(e as Error, '');
+          }
+        },
         filename: filenameBuilder,
       }),
+      fileFilter: imageFileFilter,
       limits: { fileSize: 5 * 1024 * 1024 },
     }),
   )
@@ -60,13 +88,22 @@ export class CategoriesController {
     @Req() req: any,
   ) {
     const userId = this.getUserIdFromReq(req);
+
     const relPath = `uploads/categories/${file.filename}`;
-    const cat = await this.cats.setImage(userId, id, relPath);
-    return {
-      id: cat.id,
-      name: cat.name,
-      imagePath: cat.imagePath,
-      isDefault: cat.isDefault,
-    };
+
+    try {
+      const cat = await this.cats.setImage(userId, id, relPath);
+      return {
+        id: cat.id,
+        name: cat.name,
+        imagePath: cat.imagePath,
+        isDefault: cat.isDefault,
+      };
+    } catch (e) {
+      try {
+        await fs.unlink(join(process.cwd(), relPath));
+      } catch (_) {}
+      throw e;
+    }
   }
 }

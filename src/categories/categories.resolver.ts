@@ -55,7 +55,6 @@ export class CategoriesResolver {
       imagePath: c.imagePath ?? null,
       isDefault: c.isDefault,
     };
-    // Картинку прикрепляем отдельным REST-запросом после создания
   }
 
   @Mutation(() => GqlCategory)

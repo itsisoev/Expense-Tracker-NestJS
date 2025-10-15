@@ -5,8 +5,6 @@ import { Repository } from 'typeorm';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 
-const UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'categories');
-
 @Injectable()
 export class CategoriesService {
   constructor(
@@ -18,8 +16,13 @@ export class CategoriesService {
     return this.repo.find({ where: { userId }, order: { createdAt: 'ASC' } });
   }
 
-  async create(userId: string, name: string, isDefault = false) {
-    const cat = this.repo.create({ userId, name, isDefault });
+  async create(
+    userId: string,
+    name: string,
+    isDefault = false,
+    imagePath: string | null = null,
+  ) {
+    const cat = this.repo.create({ userId, name, isDefault, imagePath });
     return this.repo.save(cat);
   }
 
@@ -58,11 +61,19 @@ export class CategoriesService {
   }
 
   async ensureDefaultCategories(userId: string) {
-    const defaults = ['Путешествие', 'Такси', 'Еда', 'Работа'];
-    for (const name of defaults) {
+    const basePath = 'uploads/categories';
+
+    const defaults: { name: string; image: string }[] = [
+      { name: 'Путешествие', image: `${basePath}/travel.webp` },
+      { name: 'Такси', image: `${basePath}/taxi.webp` },
+      { name: 'Еда', image: `${basePath}/food.webp` },
+      { name: 'Работа', image: `${basePath}/work.webp` },
+    ];
+
+    for (const { name, image } of defaults) {
       const exists = await this.repo.findOne({ where: { userId, name } });
       if (!exists) {
-        await this.create(userId, name, true);
+        await this.create(userId, name, true, image);
       }
     }
   }
